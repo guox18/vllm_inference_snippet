@@ -3,7 +3,14 @@ ComplexBench 数据集的输出解析函数
 """
 
 from typing import Dict, Any
+import sys
+from pathlib import Path
 
+# 确保可以找到 tools 模块
+tools_path = Path(__file__).parent.parent / "tools"
+if str(tools_path.parent) not in sys.path:
+    sys.path.insert(0, str(tools_path.parent))
+from tools import cut_thinking  # noqa: E402
 
 def parse_complexbench_output(original_item: dict, response: str) -> Dict[str, Any]:
     """
@@ -24,6 +31,7 @@ def parse_complexbench_output(original_item: dict, response: str) -> Dict[str, A
     返回:
         result: 格式化的输出数据项
     """
+    response = cut_thinking(response)
     return {
         "main_id": original_item.get("main_id", 0),
         "model": "Qwen2.5-7B-Instruct",

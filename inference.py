@@ -126,7 +126,8 @@ def run_inference(args):
         print(f"✓ 单进程模式，处理全部 {len(data)} 条数据")
 
     # 4. 设置输出文件（多分片时添加后缀）
-    if world_size > 1:
+    # 如果明确指定了分片参数，或者 world_size > 1，都添加分片后缀
+    if world_size > 1 or (args.shard_id is not None and args.num_shards is not None):
         # 为每个分片创建独立的输出文件
         base_name = args.output_file.rsplit(".", 1)
         if len(base_name) == 2:

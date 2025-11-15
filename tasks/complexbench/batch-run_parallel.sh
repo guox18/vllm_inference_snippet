@@ -14,10 +14,14 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Todo1: 定义模型列表 格式重要*(model_path|model_name)*
+# 配置总显卡数
+TOTAL_GPUS=2
+
+# Todo1: 定义模型列表 格式重要*(model_path|model_name|tensor_parallel_size)*
 models=(
-    "/mnt/shared-storage-user/large-model-center-share-weights/hf_hub/models--Qwen--Qwen2.5-7B-Instruct/snapshots/bb46c15ee4bb56c5b63245ef50fd7637234d6f75|qwen2.5-7b-instruct"
+    "/mnt/shared-storage-user/songdemin/user/guoxu/public/hf_hub/models/model--Qwen-Qwen2.5-72B-Instruct|qwen2.5-72B-instruct-origin|2"
 )
+
 # 结果目录
 results_dir="/mnt/shared-storage-user/songdemin/user/guoxu/workspace/ifdecorator/third_party_benchmarks/@inference/tasks/complexbench/results"
 mkdir -p "$results_dir"
@@ -26,14 +30,14 @@ mkdir -p "$results_dir"
 for model in "${models[@]}"; do
     model_path=$(echo "$model" | cut -d '|' -f 1)
     model_name=$(echo "$model" | cut -d '|' -f 2)
+    tensor_parallel_size=$(echo "$model" | cut -d '|' -f 3)
     
-    # Todo2: 根据显卡数量和模型设置tensor_parallel_size和num_shards
-    if [[ "$model_name" == *"72B"* ]]; then
-        extra_args="--tensor_parallel_size 2 --num_shards 1"
-        echo "检测到72B模型，使用 tensor_parallel_size=2, num_shards=1"
-    else
-        extra_args="--tensor_parallel_size 1 --num_shards 2"
-    fi
+    # 根据总显卡数和 tensor_parallel_size 计算 num_shards
+    num_shards=$((TOTAL_GPUS / tensor_parallel_size))
+    total_used_gpus=$((tensor_parallel_size * num_shards))
+    
+    extra_args="--tensor_parallel_size $tensor_parallel_size --num_shards $num_shards"
+    echo "模型: $model_name | TP=$tensor_parallel_size, Shards=$num_shards, 使用GPU数=$total_used_gpus/$TOTAL_GPUS"
     
     if [ "$dry_run" = true ]; then
         echo "=================================="
